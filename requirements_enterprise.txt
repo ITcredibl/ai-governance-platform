@@ -1,0 +1,24 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-dotenv==1.0.0
+
+# Database & Cache
+redis==5.0.1
+sqlalchemy==2.0.23
+
+# Security
+python-jose==3.3.0
+python-multipart==0.0.6
+
+# Utilities
+requests==2.31.0
+tenacity==8.2.2
+python-dateutil==2.8.2
+
+# Monitoring
+prometheus-client==0.17.1
+
+# MCP Support
+mcp==1.2.0

@@ -1,0 +1,64 @@
+[project]
+name = "itcredibl-ai-governance-platform"
+version = "1.0.0"
+description = "Enterprise AI Governance Platform with Policy Enforcement, Circuit Breakers, and Cost Controls"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "ITCREDIBL Team", email = "engineering@itcredibl.com"}
+]
+keywords = ["ai", "governance", "llm", "policy", "compliance", "itcredibl"]
+
+[project.urls]
+Homepage = "https://github.com/ITcredibl/ai-governance-platform"
+Documentation = "https://docs.itcredibl.com/governance"
+Repository = "https://github.com/ITcredibl/ai-governance-platform"
+Issues = "https://github.com/ITcredibl/ai-governance-platform/issues"
+
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.setuptools.package-dir]
+itcredibl = "src/itcredibl"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=src --cov-report=html --cov-report=term-missing -v"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true

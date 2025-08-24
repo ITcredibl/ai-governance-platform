@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # Main API Service
+  api:
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://user:password@db:5432/governance
+      - ITCREDIBL_API_KEY=${ITCREDIBL_API_KEY}
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and circuit breaking
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL for persistence
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=governance
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployments/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d governance"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MCP SQL Tool Server
+  mcp-sql:
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile.mcp
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/governance
+      - MCP_SERVER_TYPE=sql
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('mcp-sql', 3000), timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MCP Risk Tool Server
+  mcp-risk:
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile.mcp
+    environment:
+      - MCP_SERVER_TYPE=risk
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('mcp-risk', 3001), timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./deployments/monitoring/grafana-dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  redis_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
